@@ -1,0 +1,266 @@
+#include <SFML/Graphics.hpp>
+#include <iostream>
+#include "view.h"
+using namespace sf;
+
+float offsetX = 0, offsetY = 0;
+const int sizeX = 73, sizeY = 20;
+
+
+String TileMap[sizeY] = {
+
+"BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+"B                                                                      B",
+"B                                                                      B",
+"B                                                                      B",
+"B                                                S                     B",
+"B           S                                                          B",
+"B                                                           S          B",
+"B                             S                                        B",
+"B                                                                      B",
+"B                                                                      B",
+"B                                                                      B",
+"B                                           BB                         B",
+"B                                            BBBBB                     B",
+"B         0000                BBBB                                     B",
+"B                                B                                     B",
+"BBB                              B                                     B",
+"B              BB                BB                          G         B",
+"B              BB                                                      B",
+"B              BB         BB                                           B",
+"BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB    BBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+
+};
+
+
+class Player {
+private: float x, y;
+public:
+	float x0, y0, width, height, w, h, dx, dy;
+	bool onGround;
+	sf::String file;
+	sf::Image image;
+	sf::Texture texture;
+	sf::Sprite sprite;
+	FloatRect rect;
+	float animation;
+	Player(float X, float Y, float Width, float Height, float W, float H, String F) {
+		file = F;
+		w = W;
+		h = H;
+		width = Width;
+		height = Height;
+		x = x0 = X;
+		y = y0 = Y;
+		image.loadFromFile("image/" + file);
+		texture.loadFromImage(image);
+		sprite.setTexture(texture);
+		sprite.setTextureRect(IntRect(width, height, w, h));
+		rect = FloatRect(width, height, w, h);
+		animation = 0;
+		
+
+	}
+
+
+	void update(float time)
+
+	{
+		x += dx * time;
+		Collision(0);
+
+		if (onGround == false) {
+			 dy = dy + 0.00005*time;
+		}
+		y += dy * time;
+		onGround = false;
+		Collision(1);
+	
+		animation += time / 500;
+		if (animation >= 3) animation -= 3;
+		if (dx < 0) {
+			sprite.setTextureRect(sf::IntRect(40 * int(animation) + 40 - 2, 218, -30, 32));
+		}
+		if (dx > 0) {
+			sprite.setTextureRect(sf::IntRect(40 * int(animation) + 10, 218, 30, 32));
+		}
+
+
+		
+
+		sprite.setPosition(x , y);
+
+		if (y == sizeY * 30) {
+			y = y0; x = x0;
+		}
+
+		dx = 0;
+	}
+
+	void Collision(int direction) {
+		for (int j = y / 30; j < (y + h) / 30; j++) {
+			for (int i = x / 30; i < (x + w) / 30; i++) {
+				if (TileMap[j][i] != 'B') {
+					onGround = false; dy = -0.005;
+				} 
+				if (TileMap[j][i] == 'B') {
+					if (dx > 0 && direction == 0) x = i * 30 - w;
+					if (dx < 0 && direction == 0) x = i * 30 + 30;
+					if (dy > 0 && direction == 1) { y = j * 30 - h; onGround = true; dy = 0; }
+					if (dy < 0 && direction == 1) { y = j * 30 + 30; dy = 0; }
+				}
+
+			}
+		}
+	}
+
+	float GetPlayerCoordinateX() {
+		return x;
+	}
+	float GetPlayerCoordinateY() {
+		return y;
+	}
+	
+};
+
+
+
+int main()
+{
+
+	sf::RenderWindow window(sf::VideoMode(900, 600), "Mario");
+	view.reset(FloatRect(0, 0, 900, 600));
+
+	Texture textureMap;
+	textureMap.loadFromFile(String("image/sprites.png"));
+	Sprite Map;
+	Map.setTexture(textureMap);
+
+	Player Hero(40, sizeY * 30 - 70, 12, 180, 28, 32, "sprites.png"); // Первые два значения - это начальные координаты.
+
+	sf::Clock clock;
+
+
+	while (window.isOpen())
+	{
+		float time;
+		time = clock.getElapsedTime().asMicroseconds();
+		clock.restart();
+		time = time / 300;
+
+
+
+		sf::Event event;
+		while (window.pollEvent(event))
+		{
+			if (event.type == sf::Event::Closed) window.close();
+
+		}
+
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left) || sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+			Hero.dx = -0.1;
+			GetPlayerCoordinate(Hero.GetPlayerCoordinateX(), Hero.GetPlayerCoordinateY()); // отдельно вдля каждой клавиши только, если присутствует скроллинг карты
+		}
+
+
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right) || sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+			Hero.dx = 0.1;
+			GetPlayerCoordinate(Hero.GetPlayerCoordinateX(), Hero.GetPlayerCoordinateY()); // отдельно вдля каждой клавиши только, если присутствует скроллинг карты
+		}
+
+
+		/* if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+			Hero.direction = 2; Hero.speed = 0.1;
+			animation += Hero.time / 500;
+			if (animation >= 3) animation -= 3;
+			Hero.sprite.setTextureRect(sf::IntRect(40 * int(animation) + 4, 1, 89, 95));
+		}
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+	Hero.direction = 3; Hero.speed = -0.1;
+	animation += Hero.time / 500;
+	Hero.rect = FloatRect(40 * 4 + 6, 218, 34, 32);
+}
+*/
+		if (Keyboard::isKeyPressed(Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+		{
+			if (Hero.onGround == true) {
+				Hero.dy = -0.005; Hero.onGround = false; Hero.sprite.setTextureRect(IntRect(126, 220, 34, 32));
+			}
+			GetPlayerCoordinate(Hero.GetPlayerCoordinateX(), Hero.GetPlayerCoordinateY());
+		}
+
+		Hero.update(time);
+		ViewMap(time);
+		ChangeView();
+
+		window.setView(view);
+		window.clear(Color::Color(64,151,231));
+		for (int j = 0; j < sizeY; j++) {
+			for (int i = 0; i < sizeX; i++) {
+				if (TileMap[j][i] == 'B') {
+					Map.setTextureRect(IntRect(680, 170, 30, 30)); 
+				}
+				if (TileMap[j][i] == 'S') {
+					Map.setTextureRect(IntRect(180, 300, 100, 40)); 
+				}
+				if (TileMap[j][i] == '0') {
+					Map.setTextureRect(IntRect(460, 307, 30, 30));
+				}
+				if (TileMap[j][i] == 'G') {
+					Map.setTextureRect(IntRect(390, 320, 65, 62)); 
+				}
+				if (TileMap[j][i] == ' ')  continue;
+				Map.setPosition(i * 30, j * 30);
+				window.draw(Map);
+			}
+		}
+		window.draw(Hero.sprite);
+		window.display();
+
+
+
+	}
+
+	return 0;
+}
+
+
+
+
+
+
+
+
+//////////////////////////////////////////////////////////view.h///////////////////////////////////////////////////////////
+#include <SFML/Graphics.hpp>
+#include <iostream>
+
+using namespace sf; 
+
+View view;
+View GetPlayerCoordinate(float x, float y) {
+	float tempX = x, tempY = y;
+	if (x < 450)  tempX = 450;
+	if (y > 300 || y<300) tempY = 300;
+
+	view.setCenter(tempX, tempY);
+		return view;
+}
+
+View ViewMap(float time) {
+	if (Keyboard::isKeyPressed(Keyboard::I)) view.move(0, -0.1*time);
+	if (Keyboard::isKeyPressed(Keyboard::K)) view.move(0, 0.1*time);
+	if (Keyboard::isKeyPressed(Keyboard::J)) view.move(-0.1*time, 0);
+	if (Keyboard::isKeyPressed(Keyboard::L)) view.move(0.1*time, 0);
+	return view;
+}
+
+View ChangeView() {
+	if (Keyboard::isKeyPressed(Keyboard::PageDown)) view.zoom(1.001f);
+
+	return view;
+
+}
+
